@@ -95,6 +95,8 @@ def getKeysByStringPartValue(dictOfElements, valueToFind):
 def line():
   line = '#' * int(columns)
   print(line)
+#
+## End Func line
 
 ############################################################################
 #
@@ -109,7 +111,7 @@ def callVault(QUIET, path):
     print(f'{bcolors.BRed}No Vault API in calling path{bcolors.Endc}')
     exit(1)
 
-  #if not QUIET:  
+  #if not QUIET:
   #  print(f'{bcolors.BCyan}Calling Vault with {VAULT_ADDR}/v1{path}{bcolors.Endc}')
 
   headers = {'X-Vault-Token': f'{VAULT_TOKEN}'}
@@ -117,7 +119,7 @@ def callVault(QUIET, path):
   json = r.json()
   return(json)
 #
-## End Func handler
+## End Func callVault
 
 ############################################################################
 #
@@ -128,7 +130,7 @@ def callVault(QUIET, path):
 ## output system info
 #
 def outputSystemInfo(QUIET):
-  if not QUIET:  
+  if not QUIET:
     line()
     print(f'{bcolors.Default}System Information:     {bcolors.BWhite}{VAULT_ADDR}{bcolors.Endc}')
     print()
@@ -145,7 +147,7 @@ def outputSystemInfo(QUIET):
   print(f'{bcolors.Green}health.{bcolors.Default}VaultVersion:    {bcolors.BWhite}{health["version"]}{bcolors.Endc}')
   print(f'{bcolors.Green}health.{bcolors.Default}ClusterName:     {bcolors.BWhite}{health["cluster_name"]}{bcolors.Endc}')
   print(f'{bcolors.Green}health.{bcolors.Default}ClusterID:       {bcolors.BWhite}{health["cluster_id"]}{bcolors.Endc}')
-  if not QUIET:  
+  if not QUIET:
     print()
 
   sealstatus = callVault(QUIET, f'/sys/seal-status')
@@ -154,7 +156,7 @@ def outputSystemInfo(QUIET):
   print(f'{bcolors.Green}seal.{bcolors.Default}ThresholdShares:   {bcolors.BWhite}{sealstatus["t"]}{bcolors.Endc}')
   print(f'{bcolors.Green}seal.{bcolors.Default}StorageType:       {bcolors.BWhite}{sealstatus["storage_type"]}{bcolors.Endc}')
   print(f'{bcolors.Green}seal.{bcolors.Default}RecoverySeal:      {bcolors.BWhite}{sealstatus["recovery_seal"]}{bcolors.Endc}')
-  if not QUIET:  
+  if not QUIET:
     print()
 
   ## audit
@@ -169,7 +171,7 @@ def outputSystemInfo(QUIET):
     if audit["data"]["syslog/"]["path"]:
       print(f'{bcolors.Green}audit.{bcolors.Default}Audit.Syslog:     {bcolors.BWhite}On with facility {audit["data"]["syslog/"]["options"]["facility"]}{bcolors.Endc}')
       print(f'{bcolors.Green}audit.{bcolors.Default}Audit.Syslog:     {bcolors.BWhite}Local: {audit["data"]["file/"]["local"]}{bcolors.Endc}')
-  if not QUIET:  
+  if not QUIET:
     print()
 
   ## internal counters - entities
@@ -185,14 +187,14 @@ def outputSystemInfo(QUIET):
   ## internal counters - client count
   #
   print(f'{bcolors.Green}counters.{bcolors.Default}Clients:       {bcolors.BYellow}Not collected in this version{bcolors.Endc}')
-  if not QUIET:  
+  if not QUIET:
     print()
 
   ## encryption key-status
   #
   keystatus = callVault(QUIET, f'/sys/key-status')
   print(f'{bcolors.Green}key-status.{bcolors.Default}Encryptions: {bcolors.BWhite}{keystatus["encryptions"]}{bcolors.Endc}')
-  if not QUIET:  
+  if not QUIET:
     print()
 
   ## ha status
@@ -204,13 +206,13 @@ def outputSystemInfo(QUIET):
       print(f'{bcolors.Green}ha-status.{bcolors.Default}Node:         {bcolors.BWhite}{node["hostname"]} {bcolors.BCyan}ACTIVE{bcolors.Endc}')
     else:
       print(f'{bcolors.Green}ha-status.{bcolors.Default}Node:         {bcolors.BWhite}{node["hostname"]}{bcolors.Endc}')
-  if not QUIET:  
+  if not QUIET:
     print()
 
   ## leases
   #
   print(f'{bcolors.Green}leases.{bcolors.Default}Leases:          {bcolors.BYellow}Not collected in this version{bcolors.Endc}')
-  if not QUIET:  
+  if not QUIET:
     print()
 
   ## licence
@@ -224,7 +226,7 @@ def outputSystemInfo(QUIET):
       print(f'{bcolors.Green}licence.{bcolors.Default}Feature:        {bcolors.BWhite}{feature}{bcolors.Endc}')
   else:
     print(f'{bcolors.Green}licence.{bcolors.Default}Expiry:         {bcolors.BYellow}Autoloading not used{bcolors.Endc}')
-  if not QUIET:  
+  if not QUIET:
     print()
 
   ## policy
@@ -232,7 +234,7 @@ def outputSystemInfo(QUIET):
   policy = callVault(QUIET, f'/sys/policy')
   for pol in policy["policies"]:
     print(f'{bcolors.Green}policy.{bcolors.Default}Policy:          {bcolors.BWhite}{pol}{bcolors.Endc}')
-  if not QUIET:  
+  if not QUIET:
     print()
 
   ## quotas
@@ -255,17 +257,17 @@ def outputSystemInfo(QUIET):
   if num_rate_limits > 0:
     for rate in quotas["data"]["keys"]:
       print(f'{bcolors.Green}quotas.{bcolors.Default}RateLimit:       {bcolors.BWhite}{rate}{bcolors.Endc}')
-  if not QUIET:  
+  if not QUIET:
     print()
 
   ## replication
   #
   replication = callVault(QUIET, f'/sys/replication/status')
-  print(f'{bcolors.Green}replication.{bcolors.Default}DR:         {bcolors.BWhite}{replication["data"]["dr"]["mode"]}{bcolors.Endc}') 
-  print(f'{bcolors.Green}replication.{bcolors.Default}PR:         {bcolors.BWhite}{replication["data"]["performance"]["mode"]}{bcolors.Endc}') 
-  if not QUIET:  
+  print(f'{bcolors.Green}replication.{bcolors.Default}DR:         {bcolors.BWhite}{replication["data"]["dr"]["mode"]}{bcolors.Endc}')
+  print(f'{bcolors.Green}replication.{bcolors.Default}PR:         {bcolors.BWhite}{replication["data"]["performance"]["mode"]}{bcolors.Endc}')
+  if not QUIET:
     print()
-   
+
   ## namespaces
   #
   namespaces = callVault(QUIET, f'/sys/namespaces?list=true')
@@ -302,9 +304,8 @@ def outputSystemInfo(QUIET):
     total_secret_mounts += 1
   print(f'{bcolors.Green}auth-mounts.{bcolors.Default}Total:      {bcolors.BWhite}{total_auth_mounts}{bcolors.Endc}')
   print(f'{bcolors.Green}secrets-engines.{bcolors.Default}Total:  {bcolors.BWhite}{total_secret_mounts}{bcolors.Endc}')
-
 #
-## End Func handler
+## End Func outputSystemInfo
 
 ############################################################################
 #
@@ -315,12 +316,12 @@ def outputSystemInfo(QUIET):
 ## output namespace info
 #
 def outputNamespaceInfo(QUIET, namespaceName=all):
-  if not QUIET:  
+  if not QUIET:
     print(f'\n{bcolors.Cyan}Namespace Information.{bcolors.Endc}')
   print(f'\n{bcolors.Cyan}Namespace: {namespaceName}{bcolors.Endc}')
   exit(0)
 #
-## End Func handler
+## End Func outputNamespaceInfo
 
 ############################################################################
 #
@@ -403,7 +404,8 @@ def main():
 
         print(f'{bcolors.BCyan}Written agenda {filePath} to disk for {bcolors.BGreen}{author}{bcolors.Endc}')
         print(f'\n{bcolors.Cyan}All done.{bcolors.Endc}')
+#
+## End Func main
 
 if __name__ == '__main__':
     main()
-
