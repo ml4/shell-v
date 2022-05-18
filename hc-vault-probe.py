@@ -165,12 +165,14 @@ def outputSystemInfo(QUIET):
   if not audit["data"]:
     print(f'{bcolors.Green}audit.{bcolors.Default}Audit:            {bcolors.BRed}No audit devices yet{bcolors.Endc}')
   else:
-    if audit["data"]["file/"]["path"]:
+    if 'file/' in audit:
       print(f'{bcolors.Green}audit.{bcolors.Default}Audit.File:       {bcolors.BWhite}On at path {audit["data"]["file/"]["options"]["file_path"]}{bcolors.Endc}')
       print(f'{bcolors.Green}audit.{bcolors.Default}Audit.File:       {bcolors.BWhite}Local: {audit["data"]["file/"]["local"]}{bcolors.Endc}')
-    if audit["data"]["syslog/"]["path"]:
+    if 'syslog/' in audit:
       print(f'{bcolors.Green}audit.{bcolors.Default}Audit.Syslog:     {bcolors.BWhite}On with facility {audit["data"]["syslog/"]["options"]["facility"]}{bcolors.Endc}')
       print(f'{bcolors.Green}audit.{bcolors.Default}Audit.Syslog:     {bcolors.BWhite}Local: {audit["data"]["file/"]["local"]}{bcolors.Endc}')
+    if len(audit["data"]) == 1:
+      print(f'{bcolors.Green}audit.{bcolors.Default}Audit:            {bcolors.BRed}Only 1 audit device found: Add a second ASAP!{bcolors.Endc}')
   if not QUIET:
     print()
 
@@ -247,16 +249,20 @@ def outputSystemInfo(QUIET):
   #
   ## rate limits
   #
+  quotas = {}
   quotas = callVault(QUIET, f'/sys/quotas/rate-limit?list=true')
-  num_rate_limits = 0
-  for quo in quotas["data"]["keys"]:
-    if quo != "errors":
-      num_rate_limits += 1
-      #print(f'Adding {quo}')
-  print(f'{bcolors.Green}quotas.{bcolors.Default}NumGlobalLimits: {bcolors.BWhite}{num_rate_limits}{bcolors.Endc}')
-  if num_rate_limits > 0:
-    for rate in quotas["data"]["keys"]:
-      print(f'{bcolors.Green}quotas.{bcolors.Default}RateLimit:       {bcolors.BWhite}{rate}{bcolors.Endc}')
+  if 'data' in quotas:
+    num_rate_limits = 0
+    for quo in quotas["data"]["keys"]:
+      if quo != "errors":
+        num_rate_limits += 1
+        #print(f'Adding {quo}')
+    print(f'{bcolors.Green}quotas.{bcolors.Default}NumGlobalLimits: {bcolors.BWhite}{num_rate_limits}{bcolors.Endc}')
+    if num_rate_limits > 0:
+      for rate in quotas["data"]["keys"]:
+        print(f'{bcolors.Green}quotas.{bcolors.Default}RateLimit:       {bcolors.BWhite}{rate}{bcolors.Endc}')
+  else:
+    print(f'{bcolors.Green}quotas.{bcolors.Default}NumRateLimits:   {bcolors.BYellow}None{bcolors.Endc}')
   if not QUIET:
     print()
 
@@ -317,8 +323,9 @@ def outputSystemInfo(QUIET):
 #
 def outputNamespaceInfo(QUIET, namespaceName=all):
   if not QUIET:
-    print(f'\n{bcolors.Cyan}Namespace Information.{bcolors.Endc}')
-  print(f'\n{bcolors.Cyan}Namespace: {namespaceName}{bcolors.Endc}')
+    line()
+    print(f'{bcolors.BCyan}Namespace Information.{bcolors.Endc}')
+  print(f'\n{bcolors.BCyan}Namespace: {namespaceName}{bcolors.Endc}')
   exit(0)
 #
 ## End Func outputNamespaceInfo
@@ -409,3 +416,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
