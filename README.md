@@ -16,6 +16,7 @@ Some values are not yet process, such as client count and lease processing.
 
 ## Help File
 
+```shell
 usage: hc-vault-probe.py [-h] [-s] [-n NAMESPACE] [-q]
 
 HashiCorp Vault Enterprise probe, for convenient iteration of enterprise namespaces for rudimentary reporting
@@ -31,6 +32,7 @@ Hide dressing for better pipeline work:
 
 optional arguments:
   -h, --help                           show this help message and exit
+```
 
 ## Official Statement
 
