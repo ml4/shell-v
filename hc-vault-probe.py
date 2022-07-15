@@ -145,6 +145,10 @@ def outputSystemInfo(QUIET):
   print(f'{bcolors.Green}health.{bcolors.Default}PRMode:          {bcolors.BWhite}{health["replication_performance_mode"]}{bcolors.Endc}')
   print(f'{bcolors.Green}health.{bcolors.Default}DRMode:          {bcolors.BWhite}{health["replication_dr_mode"]}{bcolors.Endc}')
   print(f'{bcolors.Green}health.{bcolors.Default}VaultVersion:    {bcolors.BWhite}{health["version"]}{bcolors.Endc}')
+  if health["sealed"] == True:
+    print()
+    print(f'{bcolors.Yellow}Vault is sealed, so stopping here.{bcolors.Endc}')
+    exit(0)
   print(f'{bcolors.Green}health.{bcolors.Default}ClusterName:     {bcolors.BWhite}{health["cluster_name"]}{bcolors.Endc}')
   print(f'{bcolors.Green}health.{bcolors.Default}ClusterID:       {bcolors.BWhite}{health["cluster_id"]}{bcolors.Endc}')
   if not QUIET:
@@ -390,8 +394,8 @@ def main():
     ## need more time with argparse to work out how to improve this
     #
     if not system and not namespace:
-      print(f'{bcolors.BCyan}Start with:\n{bcolors.Endc}')
-      print(f'{bcolors.BCyan}hc-vault-probe.py -h{bcolors.Endc}')
+      system = True
+      namespace = False
       exit(1)
 
     if system:
@@ -416,5 +420,4 @@ def main():
 
 if __name__ == '__main__':
     main()
-
 
