@@ -1,5 +1,9 @@
 # shell-v
-Scripts written in bash and python to help make light work of Vault interactions.
+Scripts written in bash and python to help make lighter work of Vault interactions.
+Further information about the scripts is below.
+
+## Vault Namespace Recursive List
+hc-vault-recursive-namespace-list.sh is a very simple script to just output all namespaces in a Vault Enterprise instance.  Will not work with OSS Vault.
 
 ## Vault Probe
 Python script to output information about a HashiCorp Vault instance
