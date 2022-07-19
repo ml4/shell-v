@@ -123,6 +123,32 @@ def callVault(QUIET, path):
 
 ############################################################################
 #
+# def listAllNamespaces
+#
+############################################################################
+
+## recursively list all namespaces and output a list of all of them so other functions can iterate
+#
+def listAllNamespaces(QUIET, entry_point):
+  entry_point.rstrip("/")
+  entry_points = ()
+
+  print(f'ENTRY_POINT: {entry_point}')
+
+  if entry_point == "root":
+    child_namespaces = callVault(QUIET, f'/sys/namespaces?list=true')
+    entry_point = ''
+  else:
+    child_namespaces = callVault(QUIET, f'{entry_point}/sys/namespaces?list=true')
+    for ns in child_namespaces["data"]["keys"]:
+      entry_points.append(f"{ns}")
+
+  if entry_points:
+    for ep in entry_points:
+      listAllNamespaces(QUIET, ep)
+
+############################################################################
+#
 # def outputSystemInfo
 #
 ############################################################################
@@ -396,7 +422,6 @@ def main():
     if not system and not namespace:
       system = True
       namespace = False
-      exit(1)
 
     if system:
       ## output information about the system
@@ -413,8 +438,7 @@ def main():
         #
         outputNamespaceInfo(QUIET, arg.namespace)
 
-        print(f'{bcolors.BCyan}Written agenda {filePath} to disk for {bcolors.BGreen}{author}{bcolors.Endc}')
-        print(f'\n{bcolors.Cyan}All done.{bcolors.Endc}')
+    listAllNamespaces(QUIET, "root")
 #
 ## End Func main
 
