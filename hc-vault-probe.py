@@ -13,14 +13,6 @@ import os
 import requests
 import json
 
-#import subprocess
-#import re
-#import random
-#import signal
-#import datetime
-#import sys
-#import glob
-
 ############################################################################
 #
 #   Globals
@@ -32,6 +24,8 @@ VAULT_ADDR = os.getenv('VAULT_ADDR')
 VAULT_TOKEN = os.getenv('VAULT_TOKEN')
 VAULT_CACERT = os.getenv('VAULT_CACERT')
 rows, columns = os.popen('stty size', 'r').read().split()
+grand_total_auth_mounts = 0
+grand_total_secret_mounts = 0
 
 ############################################################################
 #
@@ -111,13 +105,16 @@ def callVault(QUIET, path):
     print(f'{bcolors.BRed}No Vault API in calling path{bcolors.Endc}')
     exit(1)
 
-  #if not QUIET:
-  #  print(f'{bcolors.BCyan}Calling Vault with {VAULT_ADDR}/v1{path}{bcolors.Endc}')
+  if not QUIET:
+    print(f'{bcolors.BMagenta}Calling Vault with {VAULT_ADDR}/v1{path}{bcolors.Endc}')
 
   headers = {'X-Vault-Token': f'{VAULT_TOKEN}'}
   r = requests.get(f'{VAULT_ADDR}/v1{path}', headers=headers, verify=f'{VAULT_CACERT}')
-  json = r.json()
-  return(json)
+  j = r.json()
+  json_dump = json.dumps(j)
+  if not QUIET:
+    print(f'{bcolors.BYellow}{json_dump}{bcolors.Endc}')
+  return(j)
 #
 ## End Func callVault
 
@@ -130,22 +127,65 @@ def callVault(QUIET, path):
 ## recursively list all namespaces and output a list of all of them so other functions can iterate
 #
 def listAllNamespaces(QUIET, entry_point):
-  entry_point.rstrip("/")
-  entry_points = ()
+  entry_points = []
+  global grand_total_auth_mounts
+  global grand_total_secret_mounts
 
-  print(f'ENTRY_POINT: {entry_point}')
-
+  #print(f'entry_point: {entry_point}')
   if entry_point == "root":
     child_namespaces = callVault(QUIET, f'/sys/namespaces?list=true')
+    ## process the root namespace
+    #
+    total_auth_mounts   = 0
+    total_secret_mounts = 0
+    print()
+
+    print(f'{bcolors.Cyan}namespaces.{bcolors.BCyan}Namespace:          {bcolors.BCyan}root{bcolors.Endc}')
+    auth_mounts   = callVault(QUIET, f'/sys/auth')
+    for auth in auth_mounts["data"]:
+      print(f'{bcolors.Cyan}namespaces.{bcolors.BCyan}AuthMethods:        {bcolors.BWhite}{auth}{bcolors.Endc}')
+      total_auth_mounts += 1
+      grand_total_auth_mounts += 1
+    print(f'{bcolors.Cyan}namespaces.{bcolors.BCyan}TotalAuthMethods:   {bcolors.BWhite}{total_auth_mounts}{bcolors.Endc}')
+    secret_mounts = callVault(QUIET, f'/sys/mounts')
+    for mount in secret_mounts["data"]:
+      print(f'{bcolors.Cyan}namespaces.{bcolors.BCyan}SecretEngines:      {bcolors.BWhite}{mount}{bcolors.Endc}')
+      total_secret_mounts += 1
+      grand_total_secret_mounts += 1
+    print(f'{bcolors.Cyan}namespaces.{bcolors.BCyan}TotalSecretEngines: {bcolors.BWhite}{total_secret_mounts}{bcolors.Endc}')
     entry_point = ''
   else:
-    child_namespaces = callVault(QUIET, f'{entry_point}/sys/namespaces?list=true')
-    for ns in child_namespaces["data"]["keys"]:
-      entry_points.append(f"{ns}")
+    child_namespaces = callVault(QUIET, f'/{entry_point}sys/namespaces?list=true')
+
+  if 'data' in child_namespaces:
+    for ns in child_namespaces["data"]["key_info"]:
+        entry_points.append(f'{ns}')
 
   if entry_points:
     for ep in entry_points:
-      listAllNamespaces(QUIET, ep)
+      print()
+      print(f'{bcolors.Cyan}namespaces.{bcolors.BCyan}Namespace:          {bcolors.BCyan}{entry_point}{ep}{bcolors.Endc}')
+      #
+      ## while we're at this point in the tree, calculate and report on namespace-specific items
+      #
+      ## tally mounts
+      #
+      total_auth_mounts   = 0
+      total_secret_mounts = 0
+      ns_auth_mounts = callVault(QUIET, f'/{entry_point}{ep}sys/auth')
+      for auth in ns_auth_mounts["data"]:
+        print(f'{bcolors.Cyan}namespaces.{bcolors.BCyan}AuthMethods:        {bcolors.BWhite}{auth}{bcolors.Endc}')
+        total_auth_mounts += 1
+        grand_total_auth_mounts += 1
+      print(f'{bcolors.Cyan}namespaces.{bcolors.BCyan}TotalAuthMethods:   {bcolors.BWhite}{total_auth_mounts}{bcolors.Endc}')
+      ns_secret_mounts = callVault(QUIET, f'/{entry_point}{ep}sys/mounts')
+      for mount in ns_secret_mounts["data"]:
+        print(f'{bcolors.Cyan}namespaces.{bcolors.BCyan}SecretEngines:      {bcolors.BWhite}{mount}{bcolors.Endc}')
+        total_secret_mounts += 1
+        grand_total_secret_mounts += 1
+      print(f'{bcolors.Cyan}namespaces.{bcolors.BCyan}TotalSecretEngines: {bcolors.BWhite}{total_secret_mounts}{bcolors.Endc}')
+      listAllNamespaces(QUIET, f'{entry_point}{ep}')
+
 
 ############################################################################
 #
@@ -306,40 +346,13 @@ def outputSystemInfo(QUIET):
 
   ## namespaces
   #
-  namespaces = callVault(QUIET, f'/sys/namespaces?list=true')
-  num_namespaces = len(namespaces["data"]["keys"])
-  print(f'{bcolors.Green}namespaces.{bcolors.Default}Number:      {bcolors.BWhite}{num_namespaces}{bcolors.Endc}')
-  for ns in namespaces["data"]["keys"]:
-    print(f'{bcolors.Green}namespaces.{bcolors.Default}Namespace:   {bcolors.BWhite}{ns}{bcolors.Endc}')
-  if not QUIET:
-    print()
+  listAllNamespaces(QUIET, "root")
 
-  ## tally mounts
+  ## auth method and secret engine totals
   #
-  total_auth_mounts  = 0
-  total_secret_mounts = 0
-  for ns in namespaces["data"]["keys"]:
-    ns_auth_mounts   = callVault(QUIET, f'/{ns}sys/auth')
-    for auth in ns_auth_mounts["data"]:
-      #print(f'auth-ns{ns}{auth}')
-      total_auth_mounts += 1
-    ns_secret_mounts = callVault(QUIET, f'/{ns}sys/mounts')
-    for mount in ns_secret_mounts["data"]:
-      #print(f'sec-ns{ns}{mount}')
-      total_secret_mounts += 1
-  #
-  ## add the root namespace
-  #
-  auth_mounts   = callVault(QUIET, f'/sys/auth')
-  for auth in auth_mounts["data"]:
-    #print(f'auth-root-{auth}')
-    total_auth_mounts += 1
-  secret_mounts = callVault(QUIET, f'/sys/mounts')
-  for mount in secret_mounts["data"]:
-    #print(f'sec-root-{mount}')
-    total_secret_mounts += 1
-  print(f'{bcolors.Green}auth-mounts.{bcolors.Default}Total:      {bcolors.BWhite}{total_auth_mounts}{bcolors.Endc}')
-  print(f'{bcolors.Green}secrets-engines.{bcolors.Default}Total:  {bcolors.BWhite}{total_secret_mounts}{bcolors.Endc}')
+  print()
+  print(f'{bcolors.Cyan}namespaces.{bcolors.BBlue}GrandTotalAuthMount:     {bcolors.BWhite}{grand_total_auth_mounts}{bcolors.Endc}')
+  print(f'{bcolors.Cyan}namespaces.{bcolors.BBlue}GrandTotalSecretEngines: {bcolors.BWhite}{grand_total_secret_mounts}{bcolors.Endc}')
 #
 ## End Func outputSystemInfo
 
@@ -376,69 +389,71 @@ def outputNamespaceInfo(QUIET, namespaceName=all):
 ## Main
 #
 def main():
-    ## create parser
+  ## create parser
+  #
+  parser = argparse.ArgumentParser(
+      description=f'HashiCorp Vault Enterprise probe, for convenient iteration of enterprise namespaces for rudimentary reporting',
+      formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=80, width=130)
+  )
+  optional = parser._action_groups.pop()
+
+  system    = parser.add_argument_group('To just output information about the system as a whole')
+  namespace = parser.add_argument_group('Focus output to a specific namespace')
+  quiet     = parser.add_argument_group('Hide dressing for better pipeline work')
+
+  ## add arguments to the parser
+  #
+  system.add_argument('-s', '--system',       action='store_true', help='Output information about the system as a whole, not namespaces-level information')
+
+  namespace.add_argument('-n', '--namespace', type=str, help='Specify a namespace to operate on; use the string all for all namespaces on the system')
+
+  quiet.add_argument('-q', '--quiet',         action='store_true', help='Hide extraneous output')
+
+  parser._action_groups.append(optional)
+
+  ## parse
+  #
+  arg = parser.parse_args()
+
+  if arg.quiet:
+    QUIET = True
+  else:
+    QUIET = False
+
+  if arg.system:
+    system = True
+  else:
+    system = False
+
+  if arg.namespace:
+    namespace = True
+  else:
+    namespace = False
+
+  ## need more time with argparse to work out how to improve this
+  #
+  if not system and not namespace:
+    system = True
+    namespace = False
+
+  if system:
+    ## output information about the system
     #
-    parser = argparse.ArgumentParser(
-        description=f'HashiCorp Vault Enterprise probe, for convenient iteration of enterprise namespaces for rudimentary reporting',
-        formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=80, width=130)
-    )
-    optional = parser._action_groups.pop()
+    outputSystemInfo(QUIET)
 
-    system    = parser.add_argument_group('To just output information about the system as a whole')
-    namespace = parser.add_argument_group('Focus output to a specific namespace')
-    quiet     = parser.add_argument_group('Hide dressing for better pipeline work')
-
-    ## add arguments to the parser
-    #
-    system.add_argument('-s', '--system',       action='store_true', help='Output information about the system as a whole, not namespaces-level information')
-
-    namespace.add_argument('-n', '--namespace', type=str, help='Specify a namespace to operate on; use the string all for all namespaces on the system')
-
-    quiet.add_argument('-q', '--quiet',         action='store_true', help='Hide extraneous output')
-
-    parser._action_groups.append(optional)
-
-    ## parse
-    #
-    arg = parser.parse_args()
-
-    if arg.quiet:
-      QUIET = True
-    else:
-      QUIET = False
-
-    if arg.system:
-      system = True
-    else:
-      system = False
-
-    if arg.namespace:
-      namespace = True
-    else:
-      namespace = False
-
-    ## need more time with argparse to work out how to improve this
-    #
-    if not system and not namespace:
-      system = True
-      namespace = False
-
-    if system:
-      ## output information about the system
+  if namespace:
+    if arg.namespace == "all":
+      ## generate list of all namespaces
       #
-      outputSystemInfo(QUIET)
+      outputNamespaceInfo(QUIET, "all")
+    else:
+      ## assign namespace array to just the specified namespace
+      #
+      outputNamespaceInfo(QUIET, arg.namespace)
 
-    if namespace:
-      if arg.namespace == "all":
-        ## generate list of all namespaces
-        #
-        outputNamespaceInfo(QUIET, "all")
-      else:
-        ## assign namespace array to just the specified namespace
-        #
-        outputNamespaceInfo(QUIET, arg.namespace)
+  print()
+  print(f'{bcolors.Default}All done.{bcolors.Endc}')
 
-    listAllNamespaces(QUIET, "root")
 #
 ## End Func main
 
