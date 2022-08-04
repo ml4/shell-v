@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 ## hc-vault-recursive-namespace-list.sh - Recursive list of Vault Enterprise namespaces
 #
